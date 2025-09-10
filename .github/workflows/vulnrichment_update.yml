@@ -25,13 +25,19 @@ jobs:
       - name: Clone Vulnrichment repository
         run: git clone https://github.com/cisagov/vulnrichment.git
 
-      - name: Combine JSON files
+      - name: Combine Vulnrichment JSON files
         run: python combine.py
+        
+      # EPSSデータのダウンロードと解凍
+      - name: Download and Extract EPSS Data
+        run: |
+          pip install requests
+          python epss_update.py
 
       - name: Commit and push changes
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add vulnrichment_all.json all_cve_*.json
-          git commit -m "Automated update of Vulnrichment JSON files" || echo "No changes to commit"
+          git add vulnrichment_all.json epss_scores-current.csv
+          git commit -m "Automated update of Vulnrichment and EPSS data" || echo "No changes to commit"
           git push
