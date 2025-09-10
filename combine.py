@@ -3,7 +3,7 @@ import glob
 import datetime
 import os
 
-json_files = glob.glob('[12][09][0-9][0-9]/*/*.json')
+json_files = glob.glob('vulnrichment/[12][09][0-9][0-9]/*/*.json')
 
 all_data = []
 for file_path in json_files:
