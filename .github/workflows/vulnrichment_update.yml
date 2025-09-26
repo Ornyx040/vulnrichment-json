@@ -1,16 +1,25 @@
-name: Update Vulnrichment JSON
+name: Update Vulnrichment and EPSS Data
 
 on:
   schedule:
+    # 毎日午前0時（UTC）に実行 = 日本時間午前9時
     - cron: '0 0 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  update-json:
+  update-data:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # 修正点1: LFSの利用を完全に無効化
+          lfs: false
+          # LFSのエラーを避けるため、トークン指定も不要に
+          # token: ${{ secrets.GITHUB_TOKEN }} # コメントアウトまたは削除
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -20,13 +29,19 @@ jobs:
       - name: Clone Vulnrichment repository
         run: git clone https://github.com/cisagov/vulnrichment.git
 
-      - name: Combine JSON files
+      - name: Combine Vulnrichment JSON files (Chunked)
         run: python combine.py
+        
+      - name: Download and Extract EPSS Data (Chunked)
+        run: |
+          pip install requests
+          python epss_update.py
 
       - name: Commit and push changes
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add vulnrichment_all.json all_cve_*.json
-          git commit -m "Automated update of Vulnrichment JSON files" || echo "No changes to commit"
+          # 修正点2: 分割されたファイルのみをコミット
+          git add vulnrichment_part_*.json epss_part_*.csv
+          git commit -m "Automated update of data (LFS-free chunked files)" || echo "No changes to commit"
           git push
